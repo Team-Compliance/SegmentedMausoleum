@@ -2,6 +2,17 @@ maus=RegisterMod("Maus",1)					--someone please write better floorgen!!!!! :sob:
 maus.savedrooms={}
 maus.permittedtypes={[1]=true,[25]=true,[26]=true}
 
+local DoorSlotFlag = { -- for reference
+  LEFT0 = 1 << DoorSlot.LEFT0,
+  UP0 = 1 << DoorSlot.UP0,
+  RIGHT0 = 1 << DoorSlot.RIGHT0,
+  DOWN0 = 1 << DoorSlot.DOWN0,
+  LEFT1 = 1 << DoorSlot.LEFT1,
+  UP1 = 1 << DoorSlot.UP1,
+  RIGHT1 = 1 << DoorSlot.RIGHT1,
+  DOWN1 = 1 << DoorSlot.DOWN1,
+}
+
 function maus:FindTreasureRoom()
 	local rooms = Game():GetLevel():GetRooms()
 	for i = 0, rooms.Size - 1 do
@@ -25,20 +36,24 @@ function maus:FindBossRoom()
 end
 
 function maus:CreateRooms(id,rng)
+	local oldroom = Game():GetLevel():GetRoomByIdx(id)
 	local lastroom=nil
 	local neighbors={-1,-13,1,13}
 	for i=1,4 do
-		local out=rng:RandomFloat()
-		if out<0.2 then
-			Game():GetLevel():MakeRedRoomDoor(id,i-1)
-			
-			local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[i],0)
-			newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-			if newRoom.Data then
-				if not maus.permittedtypes[newRoom.Data.Type] then
-					newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+		if oldroom.Data.Doors & (1 << i-1) > 0 then
+			print(i-1)
+			local out=rng:RandomFloat()
+			if out<0.2 then
+				Game():GetLevel():MakeRedRoomDoor(id,i-1)
+				
+				local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[i],0)
+				newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+				if newRoom.Data then
+					if not maus.permittedtypes[newRoom.Data.Type] then
+						newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+					end
+					lastroom = newRoom
 				end
-				lastroom = newRoom
 			end
 		end
 	end
@@ -68,38 +83,42 @@ function maus:GenerateBackroomSpace()
 	if not chosenroomslot then
 		return
 	end
+	
 	local oldchallenge = Game().Challenge
 	Game().Challenge = Challenge.CHALLENGE_RED_REDEMPTION
-	Game():GetLevel():MakeRedRoomDoor(chosenroomslot-13,DoorSlot.DOWN0)
+	Game():GetLevel():MakeRedRoomDoor(chosenroomslot - 13, DoorSlot.DOWN0)
+	local exitroom = Game():GetLevel():GetRoomByIdx(chosenroomslot, 0)
 	if maus.savedrooms["teleporterexit"] then
-		local r=Game():GetLevel():GetRoomByIdx(chosenroomslot,0)
-		r.Data=maus.savedrooms["teleporterexit"]
-		r.Flags=RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+		exitroom.Data = maus.savedrooms["teleporterexit"]
+		exitroom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
 	end
 	Game().Challenge = oldchallenge
+	
 	local neighbors = {-1,-13,1,13}
 	local saveneighbors = {}
 	local rng = RNG()
 	rng:SetSeed(Game():GetSeeds():GetStageSeed(Game():GetLevel():GetStage()),0)
-	local generatedrooms=0
-	local lastroom=nil
-	for i=1,4 do
-		local out=rng:RandomFloat()
-		if out<0.9 or (generatedrooms==0 and i==4) then
-			Game():GetLevel():MakeRedRoomDoor(chosenroomslot,i-1)
-			
-			local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[i],0)
-			newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-			generatedrooms = generatedrooms+1
-			if newRoom.Data then
-				if not maus.permittedtypes[newRoom.Data.Type] then
-					newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+	local generatedrooms = 0
+	local lastroom = nil
+	for i = 1, 4 do
+		if exitroom.Data.Doors & (1 << i-1) > 0 then
+			local out = rng:RandomFloat()
+			if out < 0.9 or (generatedrooms == 0 and i == 4) then
+				Game():GetLevel():MakeRedRoomDoor(chosenroomslot, i-1)
+				
+				local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[i],0)
+				newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+				generatedrooms = generatedrooms + 1
+				if newRoom.Data then
+					if not maus.permittedtypes[newRoom.Data.Type] then
+						newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+					end
+					lastroom = mausroom
 				end
-				lastroom = mausroom
-			end
-			mausroom = maus:CreateRooms(chosenroomslot+neighbors[i],rng)
-			if mausroom and mausroom.Data then
-				lastroom = mausroom
+				mausroom = maus:CreateRooms(chosenroomslot+neighbors[i],rng)
+				if mausroom and mausroom.Data then
+					lastroom = mausroom
+				end
 			end
 		end
 	end
