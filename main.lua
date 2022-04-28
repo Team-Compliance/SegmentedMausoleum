@@ -35,29 +35,29 @@ function maus:FindBossRoom()
 	end
 end
 
-function maus:CreateRooms(id,rng)
+function maus:CreateRooms(id,rng,step)
 	local oldroom = Game():GetLevel():GetRoomByIdx(id)
-	local lastroom=nil
+	if not oldroom.Data then return end
 	local neighbors={-1,-13,1,13}
-	for i=1,4 do
-		if oldroom.Data.Doors & (1 << i-1) > 0 then
-			print(i-1)
-			local out=rng:RandomFloat()
-			if out<0.2 then
-				Game():GetLevel():MakeRedRoomDoor(id,i-1)
-				
-				local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[i],0)
-				newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-				if newRoom.Data then
-					if not maus.permittedtypes[newRoom.Data.Type] then
-						newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
-					end
-					lastroom = newRoom
-				end
+	local randomdoorslot = nil
+	
+	repeat randomdoorslot = rng:RandomInt(4)
+	until oldroom.Data.Doors & (1 << randomdoorslot) > 0
+	print(randomdoorslot)
+	
+	local out = rng:RandomFloat()
+	if out < (1 - step) then
+		Game():GetLevel():MakeRedRoomDoor(id,randomdoorslot)
+		
+		local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[randomdoorslot+1],0)
+		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+		if newRoom.Data then
+			if not maus.permittedtypes[newRoom.Data.Type] then
+				newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
 			end
 		end
+		maus:CreateRooms(id+neighbors[randomdoorslot+1], rng, step + 0.05)
 	end
-	return lastroom
 end
 
 function maus:GenerateBackroomSpace()
@@ -95,38 +95,25 @@ function maus:GenerateBackroomSpace()
 	Game().Challenge = oldchallenge
 	
 	local neighbors = {-1,-13,1,13}
-	local saveneighbors = {}
+	local lastroom = nil
+	
 	local rng = RNG()
 	rng:SetSeed(Game():GetSeeds():GetStageSeed(Game():GetLevel():GetStage()),0)
-	local generatedrooms = 0
-	local lastroom = nil
-	for i = 1, 4 do
-		if exitroom.Data.Doors & (1 << i-1) > 0 then
-			local out = rng:RandomFloat()
-			if out < 0.9 or (generatedrooms == 0 and i == 4) then
-				Game():GetLevel():MakeRedRoomDoor(chosenroomslot, i-1)
-				
-				local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[i],0)
-				newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-				generatedrooms = generatedrooms + 1
-				if newRoom.Data then
-					if not maus.permittedtypes[newRoom.Data.Type] then
-						newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
-					end
-					lastroom = mausroom
-				end
-				mausroom = maus:CreateRooms(chosenroomslot+neighbors[i],rng)
-				if mausroom and mausroom.Data then
-					lastroom = mausroom
-				end
-			end
+	
+	local randomdoorslot = nil
+	repeat randomdoorslot = rng:RandomInt(4)
+	until exitroom.Data.Doors & (1 << randomdoorslot) > 0
+	
+	Game():GetLevel():MakeRedRoomDoor(chosenroomslot, randomdoorslot)
+	
+	local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
+	newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+	if newRoom.Data then
+		if not maus.permittedtypes[newRoom.Data.Type] then
+			newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
 		end
 	end
-	if lastroom then
-		if maus.savedrooms["treasure"] then
-			lastroom.Data = maus.savedrooms["treasure"]
-		end
-	end
+	maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng, 0)
 	return chosenroomslot
 end
 
