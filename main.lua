@@ -134,6 +134,8 @@ function maus:GenerateBackroomSpace()
 	repeat randomdoorslot = rng:RandomInt(4)
 	until exitroom.Data.Doors & (1 << randomdoorslot) > 0
 	
+	if maus:CanCreateRoom(chosenroomslot, randomdoorslot) then
+		Game():GetLevel():MakeRedRoomDoor(chosenroomslot, randomdoorslot)
 		
 		local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
 		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
@@ -142,6 +144,7 @@ function maus:GenerateBackroomSpace()
 				newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
 			end
 		end
+		maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
 		maus:SetVisibility()
 		numRooms = 0
 		loops = 0
