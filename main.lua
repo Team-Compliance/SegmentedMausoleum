@@ -1,62 +1,95 @@
 maus=RegisterMod("Maus",1)					--someone please write better floorgen!!!!! :sob:
 maus.savedrooms={}
 maus.permittedtypes={[1]=true,[25]=true,[26]=true}
+local rng = RNG()
 
-local DoorSlotFlag = { -- for reference
-  LEFT0 = 1 << DoorSlot.LEFT0,
-  UP0 = 1 << DoorSlot.UP0,
-  RIGHT0 = 1 << DoorSlot.RIGHT0,
-  DOWN0 = 1 << DoorSlot.DOWN0,
-  LEFT1 = 1 << DoorSlot.LEFT1,
-  UP1 = 1 << DoorSlot.UP1,
-  RIGHT1 = 1 << DoorSlot.RIGHT1,
-  DOWN1 = 1 << DoorSlot.DOWN1,
-}
-
-function maus:FindTreasureRoom()
+function maus:FindDeadEndRoom() -- make random eventually
 	local rooms = Game():GetLevel():GetRooms()
 	for i = 0, rooms.Size - 1 do
 		local room = rooms:Get(i)
-		if room.Data and room.Data.Type == RoomType.ROOM_TREASURE then
-			return room.Data
-		end
-	end
-end
-
-function maus:FindBossRoom()
-	local rooms = Game():GetLevel():GetRooms()
-	for i = 0, rooms.Size - 1 do
-		local room = rooms:Get(i)
-		if room.Data and room.Data.Type == RoomType.ROOM_BOSS then
-			if not maus.savedrooms["mausboss"] or maus.savedrooms["mausboss"].Subtype ~= 89 then
+		if room.Data then
+			if room.Data.Type ~= RoomType.ROOM_NORMAL and room.Data.Type ~= RoomType.ROOM_BOSS then
 				return room.Data
 			end
 		end
 	end
 end
 
-function maus:CreateRooms(id,rng,step)
+function maus:SetVisibility()
+	local level = Game():GetLevel()
+	if level:GetStateFlag(LevelStateFlag.STATE_COMPASS_EFFECT) then
+		level:ApplyCompassEffect(true)
+	end
+	if level:GetStateFlag(LevelStateFlag.STATE_MAP_EFFECT) then
+		level:ApplyMapEffect()
+	end
+	if level:GetStateFlag(LevelStateFlag.STATE_BLUE_MAP_EFFECT) then
+		level:ApplyBlueMapEffect()
+	end
+	if level:GetStateFlag(LevelStateFlag.STATE_FULL_MAP_EFFECT) then
+		level:ShowMap()
+	end
+end
+
+function maus:CanCreateRoom(id, doorSlot)
+	local level = Game():GetLevel()
+	
+	if doorSlot == DoorSlot.LEFT0 then
+		if level:GetRoomByIdx(id-1,0).GridIndex > -1 or level:GetRoomByIdx(id-2,0).GridIndex > -1 or level:GetRoomByIdx(id-14,0).GridIndex > -1 or level:GetRoomByIdx(id+12,0).GridIndex > -1 then
+			return false
+		end
+	elseif doorSlot == DoorSlot.UP0 then
+		if level:GetRoomByIdx(id-13,0).GridIndex > -1 or level:GetRoomByIdx(id-26,0).GridIndex > -1 or level:GetRoomByIdx(id-14,0).GridIndex > -1 or level:GetRoomByIdx(id-12,0).GridIndex > -1 then
+			return false
+		end
+	elseif doorSlot == DoorSlot.RIGHT0 then
+		if level:GetRoomByIdx(id+1,0).GridIndex > -1 or level:GetRoomByIdx(id+2,0).GridIndex > -1 or level:GetRoomByIdx(id+14,0).GridIndex > -1 or level:GetRoomByIdx(id-12,0).GridIndex > -1 then
+			return false
+		end
+	elseif doorSlot == DoorSlot.DOWN0 then
+		if level:GetRoomByIdx(id+13,0).GridIndex > -1 or level:GetRoomByIdx(id+26,0).GridIndex > -1 or level:GetRoomByIdx(id+14,0).GridIndex > -1 or level:GetRoomByIdx(id+12,0).GridIndex > -1 then
+			return false
+		end
+	end
+	
+	return true
+end
+
+local numRooms = 0
+local loops = 0
+function maus:CreateRooms(id,rng)
 	local oldroom = Game():GetLevel():GetRoomByIdx(id)
-	if not oldroom.Data then return end
+	if oldroom.GridIndex < 0 then return end
 	local neighbors={-1,-13,1,13}
-	local randomdoorslot = nil
-	
-	repeat randomdoorslot = rng:RandomInt(4)
-	until oldroom.Data.Doors & (1 << randomdoorslot) > 0
-	print(randomdoorslot)
-	
-	local out = rng:RandomFloat()
-	if out < (1 - step) then
-		Game():GetLevel():MakeRedRoomDoor(id,randomdoorslot)
-		
-		local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[randomdoorslot+1],0)
-		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-		if newRoom.Data then
-			if not maus.permittedtypes[newRoom.Data.Type] then
-				newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+	while numRooms < 12 do
+		for i = 1, 4 do
+			local door = rng:RandomInt(4) + 1
+			if oldroom.Data.Doors & (1 << door-1) > 0 then
+				if maus:CanCreateRoom(id, door-1) then
+					local out = rng:RandomFloat()
+					if out < 0.7 then
+						Game():GetLevel():MakeRedRoomDoor(id,door-1)
+						
+						local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[door],0)
+						if newRoom.GridIndex > -1 then
+							newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+							if newRoom.Data then
+								if not maus.permittedtypes[newRoom.Data.Type] then
+									newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+								end
+							end
+							numRooms = numRooms + 1
+							maus:CreateRooms(id+neighbors[door], rng)
+						end
+					end
+				end
 			end
 		end
-		maus:CreateRooms(id+neighbors[randomdoorslot+1], rng, step + 0.05)
+		
+		loops = loops + 1
+		if loops > 1000 then
+			break
+		end
 	end
 end
 
@@ -97,73 +130,53 @@ function maus:GenerateBackroomSpace()
 	local neighbors = {-1,-13,1,13}
 	local lastroom = nil
 	
-	local rng = RNG()
-	rng:SetSeed(Game():GetSeeds():GetStageSeed(Game():GetLevel():GetStage()),0)
-	
 	local randomdoorslot = nil
 	repeat randomdoorslot = rng:RandomInt(4)
 	until exitroom.Data.Doors & (1 << randomdoorslot) > 0
 	
-	Game():GetLevel():MakeRedRoomDoor(chosenroomslot, randomdoorslot)
-	
-	local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
-	newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-	if newRoom.Data then
-		if not maus.permittedtypes[newRoom.Data.Type] then
-			newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+		
+		local newRoom = Game():GetLevel():GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
+		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
+		if newRoom.Data then
+			if not maus.permittedtypes[newRoom.Data.Type] then
+				newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
+			end
 		end
+		maus:SetVisibility()
+		numRooms = 0
+		loops = 0
+		return chosenroomslot
 	end
-	maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng, 0)
-	return chosenroomslot
 end
 
 function maus:Init()
+	local level = Game():GetLevel()
 	maus.savedrooms = {}
+	rng:SetSeed(Game():GetSeeds():GetStageSeed(level:GetStage()),0)
 	
 	Isaac.ExecuteCommand("goto s.teleporter.0")
-	local gotor = Game():GetLevel():GetRoomByIdx(-3,0)
+	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
 		maus.savedrooms["teleporter"] = gotor.Data
 	end
 	Isaac.ExecuteCommand("goto s.teleporterexit.0")
-	local gotor = Game():GetLevel():GetRoomByIdx(-3,0)
+	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
 		maus.savedrooms["teleporterexit"] = gotor.Data
 	end
 	Isaac.ExecuteCommand("goto 6 6 0")
 	
-	maus.savedrooms["mausboss"] = maus:FindBossRoom()
-	maus.savedrooms["treasure"] = maus:FindTreasureRoom()
-	
 	local caves = Game():GetLevel():GetStage() - 2
-	Game():GetLevel():SetStage(caves,27)
+	level:SetStage(caves, 27)
 	Game():GetSeeds():ForgetStageSeed(caves)
 	Isaac.ExecuteCommand("reseed")
 	
-	for i = 0, 168 do
-		local room = Game():GetLevel():GetRoomByIdx(i, 0)
-		if room.Data then 
-			if room.Data.Type == RoomType.ROOM_BOSS then
-				local neighborcount=0
-				local neighbors = {-13,-1,1,13}
-				for n = 1, 4 do
-					local neighbor = Game():GetLevel():GetRoomByIdx(neighbors[n], 0)
-					if neighbor.Data then
-						neighborcount = neighborcount + 1
-					end
-				end
-				
-				if neighborcount <= 1 then
-					if maus.savedrooms["mausboss"] then
-						room.Data = maus.savedrooms["mausboss"]
-					end
-				end
-			elseif room.Data.Type == RoomType.ROOM_TREASURE then
-				if maus.savedrooms["teleporter"] then
-					room.Data = maus.savedrooms["teleporter"]
-				end
-			end
-		end
+	local room = nil
+	repeat room = level:GetRoomByIdx(rng:RandomInt(169))
+	until room.Data and room.Data.Type ~= RoomType.ROOM_BOSS and room.Data.Type ~= RoomType.ROOM_SECRET and room.Data.Type ~= RoomType.ROOM_SUPERSECRET and room.Data.Type ~= RoomType.ROOM_ULTRASECRET and room.Data.StageID == 0
+	if maus.savedrooms["teleporter"] then
+		maus.savedrooms["special"] = room.Data
+		room.Data = maus.savedrooms["teleporter"]
 	end
 	
 	maus:GenerateBackroomSpace()
@@ -182,9 +195,12 @@ end
 maus:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, maus.Room)
 
 function maus:Level()
-	if Game():GetLevel():GetStageType() == StageType.STAGETYPE_REPENTANCE then
-		if Game():GetLevel():GetStage() == LevelStage.STAGE3_1 or Game():GetLevel():GetStage() == LevelStage.STAGE3_2 then
-			maus:Init()
+	local level = Game():GetLevel()
+	if level:GetStageType() == StageType.STAGETYPE_REPENTANCE then
+		if level:GetStage() == LevelStage.STAGE3_1 or level:GetStage() == LevelStage.STAGE3_2 then
+			if level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH == 0 then
+				maus:Init()
+			end
 		end
 	end
 end
