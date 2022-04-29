@@ -1,5 +1,12 @@
 maus=RegisterMod("Maus", 1)
 maus.savedrooms={}
+maus.bannedspecialrooms={
+	[7] = true,
+	[8] = true,
+	[14] = true,
+	[15] = true,
+	[24] = true
+}
 local rng = RNG()
 
 function maus:CheckIntegrity()
@@ -34,15 +41,17 @@ function maus:CountNeighbors(index)
 	return count
 end
 
-function maus:CountBackroomDeadEnds()
+function maus:CountFreeDeadEnds()
 	local level = Game():GetLevel()
 	local count = 0
 	for i = 0, 168 do
 		local room = level:GetRoomByIdx(i, 0)
 		if room.Data then
-			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
-				if maus:CountNeighbors(room.GridIndex) == 1 then
-					count = count + 1
+			if room.Data.Type == RoomType.ROOM_DEFAULT then
+				if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
+					if maus:CountNeighbors(room.GridIndex) == 1 then
+						count = count + 1
+					end
 				end
 			end
 		end
@@ -52,23 +61,17 @@ end
 
 function maus:ShiftSpecialRooms()
 	local level = Game():GetLevel()
-	local rooms = level:GetRooms()
-	local deadEnds = maus:CountBackroomDeadEnds()
-	local specialCount = 0
 	for i = 0, 168 do
 		local room = level:GetRoomByIdx(i, 0)
 		
 		local tempData = nil
 		if room.Data then
 			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and room.Data.StageID == 0 then
-				specialCount = specialCount + 1
-				if maus:CountNeighbors(room.GridIndex) > 1 then
-					if specialCount > deadEnds then
-						room.Data = level:GetRoomByIdx(84,0).Data
-						print("no more dead ends, replacing")
-					else
-						tempData = room.Data
-					end
+				if maus.bannedspecialrooms[room.Data.Type] == true or maus:CountFreeDeadEnds() == 0 then
+					print(room.Data.Type)
+					room.Data = Game():GetLevel():GetRoomByIdx(Game():GetLevel():GetStartingRoomIndex(), 0).Data
+				elseif maus:CountNeighbors(room.GridIndex) > 1 then
+					tempData = room.Data
 				end
 			end
 		end
@@ -78,11 +81,11 @@ function maus:ShiftSpecialRooms()
 			repeat newRoom = level:GetRoomByIdx(rng:RandomInt(169))
 			until newRoom.Data and (newRoom.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and newRoom.Data.Type == RoomType.ROOM_DEFAULT and maus:CountNeighbors(newRoom.GridIndex) == 1
 			if newRoom.Data then
-				if room.Data then
-					room.Data = newRoom.Data
-				end
+				room.Data = newRoom.Data
 				newRoom.Data = tempData
 				tempData = nil
+				
+				maus.bannedspecialrooms[room.Data.Type] = true
 			end
 		end
 	end
@@ -146,7 +149,7 @@ function maus:CreateRooms(id,rng)
 	local oldroom = Game():GetLevel():GetRoomByIdx(id)
 	if oldroom.GridIndex < 0 then return end
 	local neighbors={-1,-13,1,13}
-	while numRooms < 12 do
+	while numRooms < 10 do
 		for i = 1, 4 do
 			local door = rng:RandomInt(4) + 1
 			if oldroom.Data.Doors & (1 << door-1) > 0 then
@@ -190,7 +193,6 @@ function maus:GenerateBackroomSpace()
 		end
 		if not skip then
 			chosenroomslot=i
-			print(chosenroomslot)
 			break
 		end
 	end
@@ -223,6 +225,13 @@ function maus:GenerateBackroomSpace()
 		maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
 		maus:ShiftSpecialRooms()
 		maus:SetVisibility()
+		maus.bannedspecialrooms={
+			[7] = true,
+			[8] = true,
+			[14] = true,
+			[15] = true,
+			[24] = true
+		}
 		numRooms = 0
 		loops = 0
 		return chosenroomslot
