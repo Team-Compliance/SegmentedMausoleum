@@ -3,7 +3,7 @@ maus.savedrooms={}
 maus.permittedtypes={[1]=true,[25]=true,[26]=true}
 local rng = RNG()
 
-function maus:FindDeadEndRoom() -- make random eventually
+function maus:IsDead() -- make random eventually
 	local rooms = Game():GetLevel():GetRooms()
 	for i = 0, rooms.Size - 1 do
 		local room = rooms:Get(i)
@@ -172,10 +172,10 @@ function maus:Init()
 	end
 	Isaac.ExecuteCommand("goto 6 6 0")
 	
-	local caves = Game():GetLevel():GetStage() - 2
-	level:SetStage(caves, 27)
-	Game():GetSeeds():ForgetStageSeed(caves)
-	Isaac.ExecuteCommand("reseed")
+	--local caves = Game():GetLevel():GetStage() - 2
+	--level:SetStage(caves, 27)
+	--Game():GetSeeds():ForgetStageSeed(caves)
+	--Isaac.ExecuteCommand("reseed")
 	
 	local room = nil
 	repeat room = level:GetRoomByIdx(rng:RandomInt(169))
@@ -186,7 +186,7 @@ function maus:Init()
 	end
 	
 	maus:GenerateBackroomSpace()
-	Game():GetLevel():SetStage(caves + 2, StageType.STAGETYPE_REPENTANCE)
+	--Game():GetLevel():SetStage(caves + 2, StageType.STAGETYPE_REPENTANCE)
 end
 
 function maus:Room()
