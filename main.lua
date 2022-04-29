@@ -104,7 +104,7 @@ function maus:GenerateBackroomSpace()
 			for y=-2,2 do
 				if not skip then
 					local offroom=Game():GetLevel():GetRoomByIdx(i+x+13*y,0)
-					if (i+x+13*y)>168 or offroom.Data then
+					if (i+x+13*y)>168 or offroom.GridIndex > -1 then
 						skip=true
 					end
 				end
@@ -179,7 +179,7 @@ function maus:Init()
 	
 	local room = nil
 	repeat room = level:GetRoomByIdx(rng:RandomInt(169))
-	until room ~= level:GetStartingRoomIndex() and room.Data and room.Data.Type ~= RoomType.ROOM_BOSS and room.Data.Type ~= RoomType.ROOM_SECRET and room.Data.Type ~= RoomType.ROOM_SUPERSECRET and room.Data.Type ~= RoomType.ROOM_ULTRASECRET and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and room.Data.StageID == 0
+	until room.Data and room.Data.Type ~= RoomType.ROOM_DEFAULT and room.Data.Type ~= RoomType.ROOM_BOSS and room.Data.Type ~= RoomType.ROOM_SECRET and room.Data.Type ~= RoomType.ROOM_SUPERSECRET and room.Data.Type ~= RoomType.ROOM_ULTRASECRET and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and room.Data.StageID == 0
 	if maus.savedrooms["teleporter"] then
 		maus.savedrooms["special"] = room.Data
 		room.Data = maus.savedrooms["teleporter"]
