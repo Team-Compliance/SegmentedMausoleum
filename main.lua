@@ -34,11 +34,11 @@ function maus:CountNeighbors(index)
 	return count
 end
 
-function maus:CountMinifloorDeadEnds()
+function maus:CountBackroomDeadEnds()
 	local level = Game():GetLevel()
 	local count = 0
 	for i = 0, 168 do
-		local room = level:GetRoomByIdx(i)
+		local room = level:GetRoomByIdx(i, 0)
 		if room.Data then
 			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
 				if maus:CountNeighbors(room.GridIndex) == 1 then
@@ -53,10 +53,10 @@ end
 function maus:ShiftSpecialRooms()
 	local level = Game():GetLevel()
 	local rooms = level:GetRooms()
-	local deadEnds = maus:CountMinifloorDeadEnds()
+	local deadEnds = maus:CountBackroomDeadEnds()
 	local specialCount = 0
 	for i = 0, 168 do
-		local room = level:GetRoomByIdx(i)
+		local room = level:GetRoomByIdx(i, 0)
 		
 		local tempData = nil
 		if room.Data then
