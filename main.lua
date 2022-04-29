@@ -13,7 +13,7 @@ function maus:CheckIntegrity()
 			end
 		end
 	end
-	if count < 12 then
+	if count < 10 then
 		return false
 	end
 	return true
@@ -111,16 +111,28 @@ function maus:CanCreateRoom(id, doorSlot)
 		if level:GetRoomByIdx(id-1,0).GridIndex > -1 or level:GetRoomByIdx(id-2,0).GridIndex > -1 or level:GetRoomByIdx(id-14,0).GridIndex > -1 or level:GetRoomByIdx(id+12,0).GridIndex > -1 then
 			return false
 		end
+		if level:GetRoomByIdx(id-1,0).GridIndex < -1 or level:GetRoomByIdx(id-2,0).GridIndex < -1 or level:GetRoomByIdx(id-14,0).GridIndex < -1 or level:GetRoomByIdx(id+12,0).GridIndex < -1 then
+			return false
+		end
 	elseif doorSlot == DoorSlot.UP0 then
 		if level:GetRoomByIdx(id-13,0).GridIndex > -1 or level:GetRoomByIdx(id-26,0).GridIndex > -1 or level:GetRoomByIdx(id-14,0).GridIndex > -1 or level:GetRoomByIdx(id-12,0).GridIndex > -1 then
+			return false
+		end
+		if level:GetRoomByIdx(id-13,0).GridIndex < -1 or level:GetRoomByIdx(id-26,0).GridIndex < -1 or level:GetRoomByIdx(id-14,0).GridIndex < -1 or level:GetRoomByIdx(id-12,0).GridIndex < -1 then
 			return false
 		end
 	elseif doorSlot == DoorSlot.RIGHT0 then
 		if level:GetRoomByIdx(id+1,0).GridIndex > -1 or level:GetRoomByIdx(id+2,0).GridIndex > -1 or level:GetRoomByIdx(id+14,0).GridIndex > -1 or level:GetRoomByIdx(id-12,0).GridIndex > -1 then
 			return false
 		end
+		if level:GetRoomByIdx(id+1,0).GridIndex < -1 or level:GetRoomByIdx(id+2,0).GridIndex < -1 or level:GetRoomByIdx(id+14,0).GridIndex < -1 or level:GetRoomByIdx(id-12,0).GridIndex < -1 then
+			return false
+		end
 	elseif doorSlot == DoorSlot.DOWN0 then
 		if level:GetRoomByIdx(id+13,0).GridIndex > -1 or level:GetRoomByIdx(id+26,0).GridIndex > -1 or level:GetRoomByIdx(id+14,0).GridIndex > -1 or level:GetRoomByIdx(id+12,0).GridIndex > -1 then
+			return false
+		end
+		if level:GetRoomByIdx(id+13,0).GridIndex < -1 or level:GetRoomByIdx(id+26,0).GridIndex < -1 or level:GetRoomByIdx(id+14,0).GridIndex < -1 or level:GetRoomByIdx(id+12,0).GridIndex < -1 then
 			return false
 		end
 	end
@@ -269,18 +281,11 @@ function maus:Room()
 	local room = level:GetCurrentRoom()
 	local roomDesc = level:GetRoomByIdx(level:GetCurrentRoomIndex())
 	
-	for i=0, DoorSlot.NUM_DOOR_SLOTS do
-		local door = room:GetDoor(i)
-		if door then
-			if door.TargetRoomType == RoomType.ROOM_ERROR then
-				door:Remove()
-			end
+	if room:GetBackdropType() == BackdropType.MAUSOLEUM or room:GetBackdropType() == BackdropType.MAUSOLEUM2 then
+		if roomDesc.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0 then
+			Game():ShowHallucination(-1, BackdropType.MAUSOLEUM3)
+			SFXManager():Stop(SoundEffect.SOUND_DEATH_CARD)
 		end
-	end
-	
-	if roomDesc.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0 then
-		Game():ShowHallucination(-1, BackdropType.MAUSOLEUM3)
-		SFXManager():Stop(SoundEffect.SOUND_DEATH_CARD)
 	end
 end
 maus:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, maus.Room)
