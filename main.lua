@@ -77,6 +77,9 @@ function maus:CreateRooms(id,rng)
 								if not maus.permittedtypes[newRoom.Data.Type] then
 									newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
 								end
+								if numRooms == 11 then
+									newRoom.Data = maus.savedrooms["special"]
+								end
 							end
 							numRooms = numRooms + 1
 							maus:CreateRooms(id+neighbors[door], rng)
@@ -176,7 +179,7 @@ function maus:Init()
 	
 	local room = nil
 	repeat room = level:GetRoomByIdx(rng:RandomInt(169))
-	until room.Data and room.Data.Type ~= RoomType.ROOM_BOSS and room.Data.Type ~= RoomType.ROOM_SECRET and room.Data.Type ~= RoomType.ROOM_SUPERSECRET and room.Data.Type ~= RoomType.ROOM_ULTRASECRET and room.Data.StageID == 0
+	until room ~= level:GetStartingRoomIndex() and room.Data and room.Data.Type ~= RoomType.ROOM_BOSS and room.Data.Type ~= RoomType.ROOM_SECRET and room.Data.Type ~= RoomType.ROOM_SUPERSECRET and room.Data.Type ~= RoomType.ROOM_ULTRASECRET and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and room.Data.StageID == 0
 	if maus.savedrooms["teleporter"] then
 		maus.savedrooms["special"] = room.Data
 		room.Data = maus.savedrooms["teleporter"]
