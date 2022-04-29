@@ -151,7 +151,7 @@ function maus:GenerateBackroomSpace()
 		maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
 		local room = nil
 		repeat room = level:GetRoomByIdx(rng:RandomInt(169))
-		until room.Data and (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and (maus:CountNeighbors(room.GridIndex) == 1)
+		until room.Data and room.Data.Type ~= RoomType.ROOM_TELEPORTER_EXIT and (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and (maus:CountNeighbors(room.GridIndex) == 1)
 		if maus.savedrooms["special"] then
 			room.Data = maus.savedrooms["special"]
 		end
@@ -166,13 +166,12 @@ function maus:Init()
 	local level = Game():GetLevel()
 	maus.savedrooms = {}
 	rng:SetSeed(Game():GetSeeds():GetStageSeed(level:GetStage()),0)
-	
+
 	Isaac.ExecuteCommand("goto s.teleporter.0")
 	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
 		maus.savedrooms["teleporter"] = gotor.Data
 	end
-
 	Isaac.ExecuteCommand("goto s.teleporterexit.0")
 	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
@@ -184,6 +183,7 @@ function maus:Init()
 	if gotor.Data then
 		maus.savedrooms["supersecret"] = gotor.Data
 	end
+
 	Isaac.ExecuteCommand("goto 6 6 0")
 	
 	local room = nil
