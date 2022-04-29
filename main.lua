@@ -7,6 +7,7 @@ maus.bannedspecialrooms={
 	[15] = true,
 	[24] = true
 }
+maus.alreadyexists={}
 local rng = RNG()
 
 function maus:CheckIntegrity()
@@ -84,8 +85,6 @@ function maus:ShiftSpecialRooms()
 				room.Data = newRoom.Data
 				newRoom.Data = tempData
 				tempData = nil
-				
-				maus.bannedspecialrooms[room.Data.Type] = true
 			end
 		end
 	end
@@ -225,13 +224,6 @@ function maus:GenerateBackroomSpace()
 		maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
 		maus:ShiftSpecialRooms()
 		maus:SetVisibility()
-		maus.bannedspecialrooms={
-			[7] = true,
-			[8] = true,
-			[14] = true,
-			[15] = true,
-			[24] = true
-		}
 		numRooms = 0
 		loops = 0
 		return chosenroomslot
