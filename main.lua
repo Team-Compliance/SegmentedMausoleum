@@ -1,7 +1,23 @@
-maus=RegisterMod("Maus",1)					--someone please write better floorgen!!!!! :sob:
+maus=RegisterMod("Maus", 1)
 maus.savedrooms={}
-maus.permittedtypes={[1]=true,[25]=true,[26]=true}
 local rng = RNG()
+
+function maus:CheckIntegrity()
+	local level = Game():GetLevel()
+	local count = 0
+	for i = 0, 168 do
+		local room = level:GetRoomByIdx(i)
+		if room.Data then
+			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
+				count = count + 1
+			end
+		end
+	end
+	if count < 12 then
+		return false
+	end
+	return true
+end
 
 function maus:CountNeighbors(index)
 	local count = 0
@@ -16,6 +32,60 @@ function maus:CountNeighbors(index)
 	end
 	
 	return count
+end
+
+function maus:CountMinifloorDeadEnds()
+	local level = Game():GetLevel()
+	local count = 0
+	for i = 0, 168 do
+		local room = level:GetRoomByIdx(i)
+		if room.Data then
+			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
+				if maus:CountNeighbors(room.GridIndex) == 1 then
+					count = count + 1
+				end
+			end
+		end
+	end
+	return count
+end
+
+function maus:ShiftSpecialRooms()
+	local level = Game():GetLevel()
+	local rooms = level:GetRooms()
+	local deadEnds = maus:CountMinifloorDeadEnds()
+	local specialCount = 0
+	for i = 0, 168 do
+		local room = level:GetRoomByIdx(i)
+		
+		local tempData = nil
+		if room.Data then
+			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and room.Data.StageID == 0 then
+				specialCount = specialCount + 1
+				if maus:CountNeighbors(room.GridIndex) > 1 then
+					if specialCount > deadEnds then
+						room.Data = level:GetRoomByIdx(84,0).Data
+						print("no more dead ends, replacing")
+					else
+						tempData = room.Data
+					end
+				end
+			end
+		end
+		
+		if tempData then
+			local newRoom = nil
+			repeat newRoom = level:GetRoomByIdx(rng:RandomInt(169))
+			until newRoom.Data and (newRoom.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and newRoom.Data.Type == RoomType.ROOM_DEFAULT and maus:CountNeighbors(newRoom.GridIndex) == 1
+			if newRoom.Data then
+				if room.Data then
+					room.Data = newRoom.Data
+				end
+				newRoom.Data = tempData
+				tempData = nil
+			end
+		end
+	end
 end
 
 function maus:SetVisibility()
@@ -76,11 +146,6 @@ function maus:CreateRooms(id,rng)
 						local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[door],0)
 						if newRoom.GridIndex > -1 then
 							newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-							if newRoom.Data then
-								if not maus.permittedtypes[newRoom.Data.Type] then
-									newRoom.Data = Game():GetLevel():GetRoomByIdx(84,0).Data
-								end
-							end
 							numRooms = numRooms + 1
 							maus:CreateRooms(id+neighbors[door], rng)
 						end
@@ -143,18 +208,8 @@ function maus:GenerateBackroomSpace()
 		
 		local newRoom = level:GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
 		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-		if newRoom.Data then
-			if not maus.permittedtypes[newRoom.Data.Type] then
-				newRoom.Data = level:GetRoomByIdx(84,0).Data
-			end
-		end
 		maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
-		local room = nil
-		repeat room = level:GetRoomByIdx(rng:RandomInt(169))
-		until room.Data and room.Data.Type ~= RoomType.ROOM_TELEPORTER_EXIT and (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and (maus:CountNeighbors(room.GridIndex) == 1)
-		if maus.savedrooms["special"] then
-			room.Data = maus.savedrooms["special"]
-		end
+		maus:ShiftSpecialRooms()
 		maus:SetVisibility()
 		numRooms = 0
 		loops = 0
@@ -167,41 +222,52 @@ function maus:Init()
 	maus.savedrooms = {}
 	rng:SetSeed(Game():GetSeeds():GetStageSeed(level:GetStage()),0)
 
-	Isaac.ExecuteCommand("goto s.teleporter.0")
+	local ran = rng:RandomInt(6)
+	Isaac.ExecuteCommand("goto x.teleporter."..ran)
 	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
 		maus.savedrooms["teleporter"] = gotor.Data
 	end
-	Isaac.ExecuteCommand("goto s.teleporterexit.0")
+	ran = rng:RandomInt(6)
+	Isaac.ExecuteCommand("goto x.teleporterexit."..ran)
 	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
 		maus.savedrooms["teleporterexit"] = gotor.Data
 	end
-	local ran = rng:RandomInt(32)+1
-	Isaac.ExecuteCommand("goto s.supersecret."..ran)
-	local gotor = level:GetRoomByIdx(level:GetCurrentRoomIndex())
-	if gotor.Data then
-		maus.savedrooms["supersecret"] = gotor.Data
-	end
+	
+	--todo: get a super secret room and figure out how to place it
 
 	Isaac.ExecuteCommand("goto 6 6 0")
 	
+	local dontReplace =
+	{
+		[RoomType.ROOM_TREASURE] = true,
+		[RoomType.ROOM_SHOP] = true,
+		[RoomType.ROOM_BOSS] = true,
+		[RoomType.ROOM_PLANETARIUM] = true, -- not a guaranteed special room like the others but I don't want to lower the chances for no reason.
+		[RoomType.ROOM_SECRET] = true,
+		[RoomType.ROOM_SUPERSECRET] = true,
+		[RoomType.ROOM_ULTRASECRET] = true,
+	}
+	
 	local room = nil
 	repeat room = level:GetRoomByIdx(rng:RandomInt(169))
-	until room.Data and room.Data.Type ~= RoomType.ROOM_DEFAULT and room.Data.Type ~= RoomType.ROOM_BOSS and room.Data.Type ~= RoomType.ROOM_SECRET and room.Data.Type ~= RoomType.ROOM_SUPERSECRET and room.Data.Type ~= RoomType.ROOM_ULTRASECRET and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and room.Data.StageID == 0
+	until room.Data and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and maus:CountNeighbors(room.GridIndex) == 1 and not dontReplace[room.Data.Type]
 	if maus.savedrooms["teleporter"] then
-		maus.savedrooms["special"] = room.Data
 		room.Data = maus.savedrooms["teleporter"]
 	end
 	
 	maus:GenerateBackroomSpace()
+	if maus:CheckIntegrity() == false then -- uh oh
+		Isaac.ExecuteCommand("reseed") -- back to the lab again
+		--maus:Init()
+	end
 end
 
 function maus:Room()
 	local level = Game():GetLevel()
 	local room = level:GetCurrentRoom()
 	local roomDesc = level:GetRoomByIdx(level:GetCurrentRoomIndex())
-	print(maus:CountNeighbors(level:GetCurrentRoomIndex()))
 	
 	for i=0, DoorSlot.NUM_DOOR_SLOTS do
 		local door = room:GetDoor(i)
