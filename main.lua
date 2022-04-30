@@ -1,4 +1,8 @@
 maus=RegisterMod("Maus", 1)
+
+CollectibleType.COLLECTIBLE_KNIFE_PIECE_3 = Isaac.GetItemIdByName("Knife Piece 3")
+include("lua/items/KnifePiece3.lua")
+
 maus.savedrooms={}
 maus.bannedspecialrooms={
 	[7] = true,

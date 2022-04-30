@@ -1,0 +1,3 @@
+<items gfxroot="gfx/items/" version="1" deathanm2="gfx/death items.anm2">
+	<familiar name="Knife Piece 3" description="???" gfx="knifepiece3.png" quality="0" />
+</items>
