@@ -5,14 +5,7 @@ CollectibleType.COLLECTIBLE_KNIFE_PIECE_3 = Isaac.GetItemIdByName("Knife Piece 3
 include("lua/items/KnifePiece3.lua")
 
 mod.savedrooms={}
-mod.bannedspecialrooms={
-	[7] = true,
-	[8] = true,
-	[14] = true,
-	[15] = true,
-	[24] = true,
-}
-mod.alreadyexists={}
+mod.bannedspecialrooms={}
 local rng = RNG()
 
 function mod:CheckIntegrity()
@@ -71,16 +64,17 @@ function mod:ShiftSpecialRooms()
 		
 		local tempData = nil
 		if room and room.Data then
-			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and room.Data.StageID == 0 then
-				if mod.bannedspecialrooms[room.Data.Type] == true then
-					room.Data = level:GetRoomByIdx(level:GetStartingRoomIndex(), 0).Data
-				elseif mod:CountNeighbors(room.GridIndex) > 1 then
-					if mod:CountFreeDeadEnds() > 0 then
-						tempData = room.Data
-					else
-						print(room.Data.Type)
-						room.Data = level:GetRoomByIdx(level:GetStartingRoomIndex(), 0).Data
+			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and room.Data.Type ~= RoomType.ROOM_DEFAULT then
+				if not mod.bannedspecialrooms[room.Data.Type] then
+					if mod:CountNeighbors(i) > 1 then
+						if mod:CountFreeDeadEnds() == 0 then
+							room.Data = level:GetRoomByIdx(level:GetStartingRoomIndex(), 0).Data
+						else
+							tempData = room.Data
+						end
 					end
+				else
+					room.Data = level:GetRoomByIdx(level:GetStartingRoomIndex(), 0).Data
 				end
 			end
 		end
@@ -90,6 +84,7 @@ function mod:ShiftSpecialRooms()
 			repeat newRoom = level:GetRoomByIdx(rng:RandomInt(169))
 			until newRoom and newRoom.Data and (newRoom.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and newRoom.Data.Type == RoomType.ROOM_DEFAULT and mod:CountNeighbors(newRoom.GridIndex) == 1
 			if newRoom.Data then
+				mod.bannedspecialrooms[room.Data.Type] = true
 				room.Data = newRoom.Data
 				newRoom.Data = tempData
 				tempData = nil
@@ -230,6 +225,13 @@ function mod:GenerateBackroomSpace()
 		local newRoom = level:GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
 		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
 		mod:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
+		mod.bannedspecialrooms={
+			[7] = true,
+			[8] = true,
+			[14] = true,
+			[15] = true,
+			[24] = true,
+		}
 		mod:ShiftSpecialRooms()
 		mod:SetVisibility()
 		numRooms = 0
