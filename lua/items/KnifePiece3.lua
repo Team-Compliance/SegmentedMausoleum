@@ -1,12 +1,18 @@
 local mod = SegmentedMausoleum
 
-function mod:KnifeUpdate(entity)
-    local player = entity.SpawnerEntity:ToPlayer()
-    if player:HasCollectible(CollectibleType.COLLECTIBLE_KNIFE_PIECE_3) then
-         if entity:IsDead() then
-            local knife = Isaac.Spawn(EntityType.ENTITY_FAMILIAR, FamiliarVariant.KNIFE_FULL, 0, entity.Position, Vector.Zero, player):ToFamiliar()
-        end
-    end
+function mod:onEvaluateCache(player)
+	local numItem = player:GetCollectibleNum(CollectibleType.COLLECTIBLE_KNIFE_PIECE_3)
+	
+	player:CheckFamiliar(215, numItem, player:GetCollectibleRNG(CollectibleType.COLLECTIBLE_KNIFE_PIECE_3), Isaac.GetItemConfig():GetCollectible(CollectibleType.COLLECTIBLE_KNIFE_PIECE_3))	
 end
+mod:AddCallback(ModCallbacks.MC_EVALUATE_CACHE, mod.onEvaluateCache, CacheFlag.CACHE_FAMILIARS)
 
-mod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, mod.KnifeUpdate, FamiliarVariant.KNIFE_FULL)
+function mod:familiarInit(familiar)
+	familiar:AddToFollowers()
+end
+mod:AddCallback(ModCallbacks.MC_FAMILIAR_INIT, mod.familiarInit, 215)
+
+function mod:familiarUpdate(familiar)
+	familiar:FollowParent()
+end
+mod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, mod.familiarUpdate, 215)
