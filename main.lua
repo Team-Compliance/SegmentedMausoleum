@@ -157,7 +157,7 @@ function mod:CreateRooms(id,rng)
 			if oldroom.Data.Doors & (1 << door-1) > 0 then
 				if mod:CanCreateRoom(id, door-1) then
 					local out = rng:RandomFloat()
-					if out < 0.7 then
+					if out < 0.5 then
 						Game():GetLevel():MakeRedRoomDoor(id,door-1)
 						
 						local newRoom = Game():GetLevel():GetRoomByIdx(id+neighbors[door],0)
