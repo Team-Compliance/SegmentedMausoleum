@@ -10,7 +10,7 @@ mod.bannedspecialrooms={
 	[8] = true,
 	[14] = true,
 	[15] = true,
-	[24] = true
+	[24] = true,
 }
 mod.alreadyexists={}
 local rng = RNG()
@@ -65,17 +65,22 @@ end
 
 function mod:ShiftSpecialRooms()
 	local level = Game():GetLevel()
+	local deadEnds = mod:CountFreeDeadEnds()
 	for i = 0, 168 do
 		local room = level:GetRoomByIdx(i, 0)
 		
 		local tempData = nil
 		if room and room.Data then
 			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and room.Data.StageID == 0 then
-				if mod.bannedspecialrooms[room.Data.Type] == true or mod:CountFreeDeadEnds() == 0 then
-					print(room.Data.Type)
-					room.Data = Game():GetLevel():GetRoomByIdx(Game():GetLevel():GetStartingRoomIndex(), 0).Data
+				if mod.bannedspecialrooms[room.Data.Type] == true then
+					room.Data = level:GetRoomByIdx(level:GetStartingRoomIndex(), 0).Data
 				elseif mod:CountNeighbors(room.GridIndex) > 1 then
-					tempData = room.Data
+					if mod:CountFreeDeadEnds() > 0 then
+						tempData = room.Data
+					else
+						print(room.Data.Type)
+						room.Data = level:GetRoomByIdx(level:GetStartingRoomIndex(), 0).Data
+					end
 				end
 			end
 		end
@@ -285,9 +290,9 @@ function mod:Room()
 	local room = level:GetCurrentRoom()
 	local roomDesc = level:GetRoomByIdx(level:GetCurrentRoomIndex())
 	
-	if room:GetBackdropType() == BackdropType.modOLEUM or room:GetBackdropType() == BackdropType.modOLEUM2 then
+	if room:GetBackdropType() == BackdropType.MAUSOLEUM or room:GetBackdropType() == BackdropType.MAUSOLEUM2 then
 		if roomDesc.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0 then
-			Game():ShowHallucination(-1, BackdropType.modOLEUM3)
+			Game():ShowHallucination(0, BackdropType.MAUSOLEUM3)
 			SFXManager():Stop(SoundEffect.SOUND_DEATH_CARD)
 		end
 	end
