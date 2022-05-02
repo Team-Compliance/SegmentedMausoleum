@@ -1,4 +1,6 @@
-function maus:KnifeUpdate(entity)
+local mod = SegmentedMausoleum
+
+function mod:KnifeUpdate(entity)
     local player = entity.SpawnerEntity:ToPlayer()
     if player:HasCollectible(CollectibleType.COLLECTIBLE_KNIFE_PIECE_3) then
          if entity:IsDead() then
@@ -7,4 +9,4 @@ function maus:KnifeUpdate(entity)
     end
 end
 
-maus:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, maus.KnifeUpdate, FamiliarVariant.KNIFE_FULL)
+mod:AddCallback(ModCallbacks.MC_FAMILIAR_UPDATE, mod.KnifeUpdate, FamiliarVariant.KNIFE_FULL)

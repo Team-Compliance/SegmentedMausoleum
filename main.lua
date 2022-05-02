@@ -1,25 +1,26 @@
-maus=RegisterMod("Maus", 1)
+SegmentedMausoleum = RegisterMod("Segmented Mausoleum", 1)
+local mod = SegmentedMausoleum
 
 CollectibleType.COLLECTIBLE_KNIFE_PIECE_3 = Isaac.GetItemIdByName("Knife Piece 3")
 include("lua/items/KnifePiece3.lua")
 
-maus.savedrooms={}
-maus.bannedspecialrooms={
+mod.savedrooms={}
+mod.bannedspecialrooms={
 	[7] = true,
 	[8] = true,
 	[14] = true,
 	[15] = true,
 	[24] = true
 }
-maus.alreadyexists={}
+mod.alreadyexists={}
 local rng = RNG()
 
-function maus:CheckIntegrity()
+function mod:CheckIntegrity()
 	local level = Game():GetLevel()
 	local count = 0
 	for i = 0, 168 do
 		local room = level:GetRoomByIdx(i)
-		if room.Data then
+		if room and room.Data then
 			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
 				count = count + 1
 			end
@@ -31,30 +32,28 @@ function maus:CheckIntegrity()
 	return true
 end
 
-function maus:CountNeighbors(index)
+function mod:CountNeighbors(index)
 	local count = 0
 	local neighbors={-1,-13,1,13}
 	for i = 1, 4 do
 		local room = Game():GetLevel():GetRoomByIdx(index+neighbors[i], 0)
-		if room then
-			if room.GridIndex > -1 then
-				count = count + 1
-			end
+		if room and room.Data then
+			count = count + 1
 		end
 	end
 	
 	return count
 end
 
-function maus:CountFreeDeadEnds()
+function mod:CountFreeDeadEnds()
 	local level = Game():GetLevel()
 	local count = 0
 	for i = 0, 168 do
 		local room = level:GetRoomByIdx(i, 0)
-		if room.Data then
+		if room and room.Data then
 			if room.Data.Type == RoomType.ROOM_DEFAULT then
 				if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) then
-					if maus:CountNeighbors(room.GridIndex) == 1 then
+					if mod:CountNeighbors(room.GridIndex) == 1 then
 						count = count + 1
 					end
 				end
@@ -64,18 +63,18 @@ function maus:CountFreeDeadEnds()
 	return count
 end
 
-function maus:ShiftSpecialRooms()
+function mod:ShiftSpecialRooms()
 	local level = Game():GetLevel()
 	for i = 0, 168 do
 		local room = level:GetRoomByIdx(i, 0)
 		
 		local tempData = nil
-		if room.Data then
+		if room and room.Data then
 			if (room.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and room.Data.StageID == 0 then
-				if maus.bannedspecialrooms[room.Data.Type] == true or maus:CountFreeDeadEnds() == 0 then
+				if mod.bannedspecialrooms[room.Data.Type] == true or mod:CountFreeDeadEnds() == 0 then
 					print(room.Data.Type)
 					room.Data = Game():GetLevel():GetRoomByIdx(Game():GetLevel():GetStartingRoomIndex(), 0).Data
-				elseif maus:CountNeighbors(room.GridIndex) > 1 then
+				elseif mod:CountNeighbors(room.GridIndex) > 1 then
 					tempData = room.Data
 				end
 			end
@@ -84,7 +83,7 @@ function maus:ShiftSpecialRooms()
 		if tempData then
 			local newRoom = nil
 			repeat newRoom = level:GetRoomByIdx(rng:RandomInt(169))
-			until newRoom.Data and (newRoom.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and newRoom.Data.Type == RoomType.ROOM_DEFAULT and maus:CountNeighbors(newRoom.GridIndex) == 1
+			until newRoom and newRoom.Data and (newRoom.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0) and newRoom.Data.Type == RoomType.ROOM_DEFAULT and mod:CountNeighbors(newRoom.GridIndex) == 1
 			if newRoom.Data then
 				room.Data = newRoom.Data
 				newRoom.Data = tempData
@@ -94,7 +93,7 @@ function maus:ShiftSpecialRooms()
 	end
 end
 
-function maus:SetVisibility()
+function mod:SetVisibility()
 	local level = Game():GetLevel()
 	if level:GetStateFlag(LevelStateFlag.STATE_COMPASS_EFFECT) then
 		level:ApplyCompassEffect(true)
@@ -110,7 +109,7 @@ function maus:SetVisibility()
 	end
 end
 
-function maus:CanCreateRoom(id, doorSlot)
+function mod:CanCreateRoom(id, doorSlot) -- this can definitely be done better
 	local level = Game():GetLevel()
 	
 	if doorSlot == DoorSlot.LEFT0 then
@@ -148,7 +147,7 @@ end
 
 local numRooms = 0
 local loops = 0
-function maus:CreateRooms(id,rng)
+function mod:CreateRooms(id,rng)
 	local oldroom = Game():GetLevel():GetRoomByIdx(id)
 	if oldroom.GridIndex < 0 then return end
 	local neighbors={-1,-13,1,13}
@@ -156,7 +155,7 @@ function maus:CreateRooms(id,rng)
 		for i = 1, 4 do
 			local door = rng:RandomInt(4) + 1
 			if oldroom.Data.Doors & (1 << door-1) > 0 then
-				if maus:CanCreateRoom(id, door-1) then
+				if mod:CanCreateRoom(id, door-1) then
 					local out = rng:RandomFloat()
 					if out < 0.7 then
 						Game():GetLevel():MakeRedRoomDoor(id,door-1)
@@ -165,7 +164,7 @@ function maus:CreateRooms(id,rng)
 						if newRoom.GridIndex > -1 then
 							newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
 							numRooms = numRooms + 1
-							maus:CreateRooms(id+neighbors[door], rng)
+							mod:CreateRooms(id+neighbors[door], rng)
 						end
 					end
 				end
@@ -179,7 +178,7 @@ function maus:CreateRooms(id,rng)
 	end
 end
 
-function maus:GenerateBackroomSpace()
+function mod:GenerateBackroomSpace()
 	local chosenroomslot=nil
 	local level = Game():GetLevel()
 	for i=2+26,168-2-26 do
@@ -207,8 +206,8 @@ function maus:GenerateBackroomSpace()
 	Game().Challenge = Challenge.CHALLENGE_RED_REDEMPTION
 	level:MakeRedRoomDoor(chosenroomslot - 13, DoorSlot.DOWN0)
 	local exitroom = level:GetRoomByIdx(chosenroomslot, 0)
-	if maus.savedrooms["teleporterexit"] then
-		exitroom.Data = maus.savedrooms["teleporterexit"]
+	if mod.savedrooms["teleporterexit"] then
+		exitroom.Data = mod.savedrooms["teleporterexit"]
 		exitroom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
 	end
 	Game().Challenge = oldchallenge
@@ -220,36 +219,36 @@ function maus:GenerateBackroomSpace()
 	repeat randomdoorslot = rng:RandomInt(4)
 	until exitroom.Data.Doors & (1 << randomdoorslot) > 0
 	
-	if maus:CanCreateRoom(chosenroomslot, randomdoorslot) then
+	if mod:CanCreateRoom(chosenroomslot, randomdoorslot) then
 		level:MakeRedRoomDoor(chosenroomslot, randomdoorslot)
 		
 		local newRoom = level:GetRoomByIdx(chosenroomslot+neighbors[randomdoorslot+1],0)
 		newRoom.Flags = RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP
-		maus:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
-		maus:ShiftSpecialRooms()
-		maus:SetVisibility()
+		mod:CreateRooms(chosenroomslot+neighbors[randomdoorslot+1], rng)
+		mod:ShiftSpecialRooms()
+		mod:SetVisibility()
 		numRooms = 0
 		loops = 0
 		return chosenroomslot
 	end
 end
 
-function maus:Init()
+function mod:Init()
 	local level = Game():GetLevel()
-	maus.savedrooms = {}
+	mod.savedrooms = {}
 	rng:SetSeed(Game():GetSeeds():GetStageSeed(level:GetStage()),0)
 
 	local ran = rng:RandomInt(6)
 	Isaac.ExecuteCommand("goto x.teleporter."..ran)
 	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
-		maus.savedrooms["teleporter"] = gotor.Data
+		mod.savedrooms["teleporter"] = gotor.Data
 	end
 	ran = rng:RandomInt(6)
 	Isaac.ExecuteCommand("goto x.teleporterexit."..ran)
 	local gotor = level:GetRoomByIdx(-3,0)
 	if gotor.Data then
-		maus.savedrooms["teleporterexit"] = gotor.Data
+		mod.savedrooms["teleporterexit"] = gotor.Data
 	end
 	
 	--todo: get a super secret room and figure out how to place it
@@ -269,40 +268,40 @@ function maus:Init()
 	
 	local room = nil
 	repeat room = level:GetRoomByIdx(rng:RandomInt(169))
-	until room.Data and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and maus:CountNeighbors(room.GridIndex) == 1 and not dontReplace[room.Data.Type]
-	if maus.savedrooms["teleporter"] then
-		room.Data = maus.savedrooms["teleporter"]
+	until room.Data and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and mod:CountNeighbors(room.GridIndex) == 1 and not dontReplace[room.Data.Type]
+	if mod.savedrooms["teleporter"] then
+		room.Data = mod.savedrooms["teleporter"]
 	end
 	
-	maus:GenerateBackroomSpace()
-	if maus:CheckIntegrity() == false then -- uh oh
+	mod:GenerateBackroomSpace()
+	if mod:CheckIntegrity() == false then -- uh oh
 		Isaac.ExecuteCommand("reseed") -- back to the lab again
-		--maus:Init()
+		--mod:Init()
 	end
 end
 
-function maus:Room()
+function mod:Room()
 	local level = Game():GetLevel()
 	local room = level:GetCurrentRoom()
 	local roomDesc = level:GetRoomByIdx(level:GetCurrentRoomIndex())
 	
-	if room:GetBackdropType() == BackdropType.MAUSOLEUM or room:GetBackdropType() == BackdropType.MAUSOLEUM2 then
+	if room:GetBackdropType() == BackdropType.modOLEUM or room:GetBackdropType() == BackdropType.modOLEUM2 then
 		if roomDesc.Flags & RoomDescriptor.FLAG_USE_ALTERNATE_BACKDROP > 0 then
-			Game():ShowHallucination(-1, BackdropType.MAUSOLEUM3)
+			Game():ShowHallucination(-1, BackdropType.modOLEUM3)
 			SFXManager():Stop(SoundEffect.SOUND_DEATH_CARD)
 		end
 	end
 end
-maus:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, maus.Room)
+mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.Room)
 
-function maus:Level()
+function mod:Level()
 	local level = Game():GetLevel()
 	if level:GetStageType() == StageType.STAGETYPE_REPENTANCE then
 		if level:GetStage() == LevelStage.STAGE3_1 or level:GetStage() == LevelStage.STAGE3_2 then
 			if level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH == 0 then
-				maus:Init()
+				mod:Init()
 			end
 		end
 	end
 end
-maus:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, maus.Level)
+mod:AddCallback(ModCallbacks.MC_POST_NEW_LEVEL, mod.Level)
