@@ -1,8 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-	<name>Segmented Mausoleum</name>
-	<directory>segmented mausoleum</directory>
-	<description/>
-	<version>1.0</version>
-	<visibility/>
+    <name>Segmented Mausoleum</name>
+    <directory>segmented mausoleum</directory>
+    <id>2848454413</id>
+    <description></description>
+    <version>1.1</version>
+    <visibility>Private</visibility>
+    <tag id="Lua"/>
+    <tag id="Rooms"/>
+    <tag id="Floors"/>
+    <tag id="Tweaks"/>
 </metadata>
-
