@@ -3,9 +3,40 @@
     <name>Segmented Mausoleum</name>
     <directory>segmented mausoleum</directory>
     <id>2848454413</id>
-    <description></description>
-    <version>1.1</version>
-    <visibility>Private</visibility>
+    <description>The segmented Mausoleum feature from Antibirth has returned!
+
+[img]https://i.imgur.com/k6GKh7u.png[/img]
+[img]https://i.imgur.com/sOyzXnO.png[/img]
+[list]
+[*]𝐒𝐞𝐠𝐦𝐞𝐧𝐭𝐞𝐝 𝐌𝐚𝐮𝐬𝐨𝐥𝐞𝐮𝐦
+[*][u][COMING SOON][/u] 𝐒𝐞𝐠𝐦𝐞𝐧𝐭𝐞𝐝 𝐆𝐞𝐡𝐞𝐧𝐧𝐚
+[/list]
+
+[img]https://i.imgur.com/g21z6Za.png[/img]
+[list]
+[*][u]𝐃𝐢𝐫𝐞𝐜𝐭𝐨𝐫, 𝐆𝐫𝐚𝐩𝐡𝐢𝐜 𝐃𝐞𝐬𝐢𝐠𝐧𝐞𝐫[/u] = [url=https://steamcommunity.com/profiles/76561198374458982/]Sillst[/url]
+[*][u]𝐂𝐨𝐝𝐞𝐫𝐬[/u] = [url=https://steamcommunity.com/id/kittenchilly]kittenchilly[/url], [url=https://steamcommunity.com/id/im_tem]im_tem[/url]
+[*][u]𝐏𝐥𝐚𝐲𝐭𝐞𝐬𝐭𝐞𝐫𝐬[/u]= [url=https://steamcommunity.com/id/kittenchilly]kittenchilly[/url], [url=https://steamcommunity.com/id/im_tem]im_tem[/url], [url=https://steamcommunity.com/profiles/76561198374458982/]Sillst[/url]
+[/list]
+
+[img]https://i.imgur.com/3en8OyU.png[/img]
+[code]Aether, Akad, ALADAR, Andre Doruk, Blind the Bound Demon, Blixy, BrakeDude, cat,,, Firework, fly_6, Goncholito, im_tem, Kars, KitsuneMedia, kittenchilly, Kotry, lambchop_is_ok, Luigi124, Michael¿?, PixelPlz, poody_blue, Sillst, sinbiscuit, Soaring__Sky, The Demisemihemidemisemiquaver[/code]
+
+[img]https://i.imgur.com/SlXbHql.png[/img] [img]https://i.imgur.com/xd2eafr.png[/img]
+[code][u]_Kilburn[/u] - For the original Segmented Mausoleum concept
+[u]Preyn[/u] - For stylistic inspiration in the image gallery
+[u]All of you[/u] - For checking us out and supporting us :)[/code]
+
+[img]https://i.imgur.com/EmID8EA.png[/img]
+
+[img]https://i.imgur.com/OZNWMCq.png[/img] [url=https://github.com/Team-Compliance/SegmentedMausoleum]Segmented Mausoleum Repository[/url] [img]https://i.imgur.com/OZNWMCq.png[/img]
+[img]https://i.imgur.com/xK4Mor0.png[/img] [url=https://discord.gg/GdVnkV4Gwj]TBOI: Compliance Discord Server[/url] [img]https://i.imgur.com/xK4Mor0.png[/img]
+[img]https://i.imgur.com/69jZFo8.png[/img] [url=https://www.reddit.com/r/TBOICompliance/]TBOI: Compliance Subreddit[/url] [img]https://i.imgur.com/69jZFo8.png[/img]
+[img]https://i.imgur.com/GmVPmG0.png[/img] [url=https://www.youtube.com/channel/UCEdAioGltx_hOsyDW57nvSw/featured]TBOI: Compliance YouTube[/url] [img]https://i.imgur.com/GmVPmG0.png[/img]
+[img]https://i.imgur.com/jBFg02x.png[/img] [url=https://twitter.com/ComplianceMods]TBOI: Compliance Twitter[/url] [img]https://i.imgur.com/jBFg02x.png[/img]
+[img]https://i.imgur.com/MTKQKCX.png[/img]</description>
+    <version>1.2</version>
+    <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Rooms"/>
     <tag id="Floors"/>
