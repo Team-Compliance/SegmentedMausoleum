@@ -278,6 +278,10 @@ function mod:Init()
 	until room.Data and room.Data.Shape == RoomShape.ROOMSHAPE_1x1 and mod:CountNeighbors(room.GridIndex) == 1 and not dontReplace[room.Data.Type]
 	if mod.savedrooms["teleporter"] then
 		room.Data = mod.savedrooms["teleporter"]
+		if MinimapAPI then
+			local apiRoom = MinimapAPI:GetRoomByIdx(room.GridIndex)
+			apiRoom:UpdateType()
+		end
 	end
 	
 	mod:GenerateBackroomSpace()
