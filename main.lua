@@ -307,10 +307,12 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.Room)
 
 function mod:Level()
 	local level = Game():GetLevel()
-	if level:GetStageType() == StageType.STAGETYPE_REPENTANCE then
-		if level:GetStage() == LevelStage.STAGE3_1 or level:GetStage() == LevelStage.STAGE3_2 then
-			if level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH == 0 then
-				mod:Init()
+	if not Game():IsGreedMode() and not level:IsAscent() then
+		if level:GetStageType() == StageType.STAGETYPE_REPENTANCE then
+			if level:GetStage() == LevelStage.STAGE3_1 or level:GetStage() == LevelStage.STAGE3_2 then
+				if level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH == 0 then
+					mod:Init()
+				end
 			end
 		end
 	end
