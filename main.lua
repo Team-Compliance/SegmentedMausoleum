@@ -8,6 +8,32 @@ mod.savedrooms={}
 mod.bannedspecialrooms={}
 local rng = RNG()
 
+mod.adjindexes = {
+	[DoorSlot.LEFT0] = -1, 
+	[DoorSlot.UP0] = -13, 
+	[DoorSlot.RIGHT0] = 1, 
+	[DoorSlot.DOWN0] = 13
+}
+
+mod.adjindexes = {
+	[DoorSlot.LEFT0] = -1, 
+	[DoorSlot.UP0] = -13, 
+	[DoorSlot.RIGHT0] = 1, 
+	[DoorSlot.DOWN0] = 13
+}
+
+mod.borderrooms = {
+	[DoorSlot.LEFT0] = {0, 13, 26, 39, 52, 65, 78, 91, 104, 117, 130, 143, 156},
+	[DoorSlot.UP0] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+	[DoorSlot.RIGHT0] = {12, 25, 38, 51, 64, 77, 90, 103, 116, 129, 142, 155, 168},
+	[DoorSlot.DOWN0] = {156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168},
+	[DoorSlot.LEFT1] = {0, 13, 26, 39, 52, 65, 78, 91, 104, 117, 130, 143, 156},
+	[DoorSlot.UP1] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
+	[DoorSlot.RIGHT1] = {12, 25, 38, 51, 64, 77, 90, 103, 116, 129, 142, 155, 168},
+	[DoorSlot.DOWN1] = {156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168}
+}
+
+
 function mod:CheckIntegrity()
 	local level = Game():GetLevel()
 	local count = 0
@@ -109,37 +135,37 @@ function mod:SetVisibility()
 	end
 end
 
-function mod:CanCreateRoom(id, doorSlot) -- this can definitely be done better
+function mod:CanCreateRoom(id, doorSlot)
 	local level = Game():GetLevel()
-	
-	if doorSlot == DoorSlot.LEFT0 then
-		if level:GetRoomByIdx(id-1,0).GridIndex > -1 or level:GetRoomByIdx(id-2,0).GridIndex > -1 or level:GetRoomByIdx(id-14,0).GridIndex > -1 or level:GetRoomByIdx(id+12,0).GridIndex > -1 then
+
+	local double = {
+		[DoorSlot.LEFT0] = -2, 
+		[DoorSlot.UP0] = -26, 
+		[DoorSlot.RIGHT0] = 2, 
+		[DoorSlot.DOWN0] = 26
+	}
+
+	local diagonalR = {
+		[DoorSlot.LEFT0] = -14, 
+		[DoorSlot.UP0] = -12, 
+		[DoorSlot.RIGHT0] = 14, 
+		[DoorSlot.DOWN0] = 12
+	}
+
+	local diagonalL = {
+		[DoorSlot.LEFT0] = 12, 
+		[DoorSlot.UP0] = -14, 
+		[DoorSlot.RIGHT0] = -12, 
+		[DoorSlot.DOWN0] = 14
+	}
+	for _, idx in pairs(mod.borderrooms[doorSlot]) do
+		if idx == id then
 			return false
 		end
-		if level:GetRoomByIdx(id-1,0).GridIndex < -1 or level:GetRoomByIdx(id-2,0).GridIndex < -1 or level:GetRoomByIdx(id-14,0).GridIndex < -1 or level:GetRoomByIdx(id+12,0).GridIndex < -1 then
-			return false
-		end
-	elseif doorSlot == DoorSlot.UP0 then
-		if level:GetRoomByIdx(id-13,0).GridIndex > -1 or level:GetRoomByIdx(id-26,0).GridIndex > -1 or level:GetRoomByIdx(id-14,0).GridIndex > -1 or level:GetRoomByIdx(id-12,0).GridIndex > -1 then
-			return false
-		end
-		if level:GetRoomByIdx(id-13,0).GridIndex < -1 or level:GetRoomByIdx(id-26,0).GridIndex < -1 or level:GetRoomByIdx(id-14,0).GridIndex < -1 or level:GetRoomByIdx(id-12,0).GridIndex < -1 then
-			return false
-		end
-	elseif doorSlot == DoorSlot.RIGHT0 then
-		if level:GetRoomByIdx(id+1,0).GridIndex > -1 or level:GetRoomByIdx(id+2,0).GridIndex > -1 or level:GetRoomByIdx(id+14,0).GridIndex > -1 or level:GetRoomByIdx(id-12,0).GridIndex > -1 then
-			return false
-		end
-		if level:GetRoomByIdx(id+1,0).GridIndex < -1 or level:GetRoomByIdx(id+2,0).GridIndex < -1 or level:GetRoomByIdx(id+14,0).GridIndex < -1 or level:GetRoomByIdx(id-12,0).GridIndex < -1 then
-			return false
-		end
-	elseif doorSlot == DoorSlot.DOWN0 then
-		if level:GetRoomByIdx(id+13,0).GridIndex > -1 or level:GetRoomByIdx(id+26,0).GridIndex > -1 or level:GetRoomByIdx(id+14,0).GridIndex > -1 or level:GetRoomByIdx(id+12,0).GridIndex > -1 then
-			return false
-		end
-		if level:GetRoomByIdx(id+13,0).GridIndex < -1 or level:GetRoomByIdx(id+26,0).GridIndex < -1 or level:GetRoomByIdx(id+14,0).GridIndex < -1 or level:GetRoomByIdx(id+12,0).GridIndex < -1 then
-			return false
-		end
+	end
+
+	if level:GetRoomByIdx(id+mod.adjindexes[doorSlot], 0).GridIndex > -1 or level:GetRoomByIdx(id+double[doorSlot], 0).GridIndex > -1 or level:GetRoomByIdx(id+diagonalR[doorSlot], 0).GridIndex > -1 or level:GetRoomByIdx(id+diagonalL[doorSlot], 0).GridIndex > -1 then
+		return false
 	end
 	
 	return true
@@ -280,7 +306,7 @@ function mod:Init()
 		room.Data = mod.savedrooms["teleporter"]
 		if MinimapAPI then
 			local apiRoom = MinimapAPI:GetRoomByIdx(room.GridIndex)
-			apiRoom:UpdateType()
+			apiRoom:SyncRoomDescriptor()
 		end
 	end
 	
@@ -308,7 +334,7 @@ mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.Room)
 function mod:Level()
 	local level = Game():GetLevel()
 	if not Game():IsGreedMode() and not level:IsAscent() then
-		if level:GetStageType() == StageType.STAGETYPE_REPENTANCE then
+		if level:GetStageType() == StageType.STAGETYPE_REPENTANCE or level:GetStageType() == StageType.STAGETYPE_REPENTANCE_B then
 			if level:GetStage() == LevelStage.STAGE3_1 or level:GetStage() == LevelStage.STAGE3_2 then
 				if level:GetCurses() & LevelCurse.CURSE_OF_LABYRINTH == 0 then
 					mod:Init()
